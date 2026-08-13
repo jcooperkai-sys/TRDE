@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quarry-db"
+version = "1.0.0"
+description = "A relational database engine written from scratch in pure Python"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT"}
+authors = [{name = "Jeffery Eckert"}]
+keywords = ["database", "sql", "btree", "storage-engine", "from-scratch"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Database :: Database Engines/Servers",
+]
+
+[project.scripts]
+quarry = "quarry.cli:main"
+
+[tool.setuptools]
+packages = ["quarry"]
