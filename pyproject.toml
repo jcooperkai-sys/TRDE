@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "quarry-db"
+name = "trde"
 version = "1.0.0"
 description = "A relational database engine written from scratch in pure Python"
 readme = "README.md"
@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.scripts]
-quarry = "quarry.cli:main"
+trde = "trde.cli:main"
 
 [tool.setuptools]
-packages = ["quarry"]
+packages = ["trde"]

@@ -19,7 +19,7 @@ import struct
 from . import sqlast as ast
 from .btree import BTree
 from .catalog import ColumnMeta, TableMeta
-from .errors import (IntegrityError, QuarryError, SchemaError,
+from .errors import (IntegrityError, TRDEError, SchemaError,
                      TransactionError)
 from .expr import (AGGREGATE_NAMES, Aggregator, Frame, evaluate,
                    find_aggregates, truth)
@@ -188,7 +188,7 @@ def referenced_levels(node, sources, out=None):
     if isinstance(node, ast.ColumnRef):
         level = sources.owner_of(node)
         if level < 0:
-            raise QuarryError("no such column: %s" % (
+            raise TRDEError("no such column: %s" % (
                 node.name if node.table is None else "%s.%s" % (node.table, node.name)))
         out.add(level)
     elif isinstance(node, ast.Node):
@@ -237,7 +237,7 @@ class Executor(object):
             ast.Explain: self.exec_explain,
         }.get(type(statement))
         if handler is None:
-            raise QuarryError("cannot execute %r" % (statement,))
+            raise TRDEError("cannot execute %r" % (statement,))
         return handler(statement, params)
 
     # -- transactions -----------------------------------------------------
@@ -384,7 +384,7 @@ class Executor(object):
                 value_rows = source.rows
                 for row in value_rows:
                     if len(row) != len(positions):
-                        raise QuarryError("INSERT has %d target columns but the SELECT "
+                        raise TRDEError("INSERT has %d target columns but the SELECT "
                                           "produced %d" % (len(positions), len(row)))
                 literal_rows = [list(row) for row in value_rows]
             else:
@@ -392,7 +392,7 @@ class Executor(object):
                 frame = Frame(params=params)
                 for row in statement.rows:
                     if len(row) != len(positions):
-                        raise QuarryError("INSERT has %d target columns but %d values"
+                        raise TRDEError("INSERT has %d target columns but %d values"
                                           % (len(positions), len(row)))
                     literal_rows.append([evaluate(expr, frame) for expr in row])
             count = 0
@@ -634,7 +634,7 @@ class Executor(object):
         try:
             from .values import coerce
             return coerce(value, column.type)
-        except QuarryError:
+        except TRDEError:
             return None
 
     def _join_rows(self, statement, sources, tables, params):
@@ -688,7 +688,7 @@ class Executor(object):
         for item in statement.items:
             if isinstance(item.expr, ast.Star):
                 if not tables:
-                    raise QuarryError("no tables specified for *")
+                    raise TRDEError("no tables specified for *")
                 for position, name in sources.star_positions(item.expr.table):
                     outputs.append((None, name, position))
             else:
@@ -820,7 +820,7 @@ class Executor(object):
             position = expr.value - 1
             if 0 <= position < len(output_row):
                 return output_row[position]
-            raise QuarryError("ORDER BY position %d is out of range" % expr.value)
+            raise TRDEError("ORDER BY position %d is out of range" % expr.value)
         if isinstance(expr, ast.ColumnRef) and expr.table is None:
             key = expr.name.lower()
             if (None, key) not in frame.index and key in alias_positions:

@@ -1,4 +1,6 @@
-# Quarry
+# TRDE
+
+**Transactional Relational Database Engine.** (Formerly Quarry.)
 
 A relational database engine written from scratch in pure Python — no
 dependencies, no `sqlite3`, no ORM, nothing but the standard library and a file
@@ -10,19 +12,19 @@ crash-safe transactions, a SQL parser, a query planner that picks index access
 paths, and a shell.
 
 ```
-$ python3 -m quarry shop.qdb
-Quarry 1.0.0 -- a database engine built from scratch.
-quarry> CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT);
+$ python3 -m trde shop.trde
+TRDE 1.0.0 -- a database engine built from scratch.
+trde> CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT);
 CREATE TABLE users
-quarry> INSERT INTO users VALUES (1,'ada','london'),(2,'grace','nyc'),(3,'alan','london');
+trde> INSERT INTO users VALUES (1,'ada','london'),(2,'grace','nyc'),(3,'alan','london');
 3 rows inserted
-quarry> SELECT city, COUNT(*) AS n FROM users GROUP BY city ORDER BY n DESC;
+trde> SELECT city, COUNT(*) AS n FROM users GROUP BY city ORDER BY n DESC;
 city   | n
 -------+--
 london | 2
 nyc    | 1
 (2 rows)
-quarry> EXPLAIN SELECT * FROM users WHERE id = 2;
+trde> EXPLAIN SELECT * FROM users WHERE id = 2;
 detail
 ------------------------------------------
 SCAN users USING INDEX users_pkey (id=?)
@@ -32,9 +34,9 @@ SCAN users USING INDEX users_pkey (id=?)
 From Python:
 
 ```python
-from quarry import connect
+from trde import connect
 
-db = connect("shop.qdb")            # or ":memory:"
+db = connect("shop.trde")            # or ":memory:"
 db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
 db.execute("INSERT INTO t VALUES (?, ?)", (1, "ada"))
 
@@ -50,16 +52,16 @@ db.close()
 
 | Layer | File | What it does |
 | --- | --- | --- |
-| Pages | `quarry/page.py` | 4 KiB slotted pages: 16-byte header, slot array growing up, cells growing down, compaction |
-| Pager | `quarry/pager.py` | File I/O, LRU page cache, free-page list, rollback journal, crash recovery |
-| Values | `quarry/values.py` | Type coercion, record serialization, **order-preserving** key encoding |
-| Heap | `quarry/heap.py` | Row storage as a page chain; rows over 1 KB spill into overflow chains |
-| B+tree | `quarry/btree.py` | Split, borrow, merge, root collapse, leaf-chained range scans, `check()` invariant validator |
-| Catalog | `quarry/catalog.py` | The schema, stored as JSON in a page chain the file header points at |
-| Tables | `quarry/table.py` | Heap + indexes together; NOT NULL / UNIQUE / PRIMARY KEY enforcement |
+| Pages | `trde/page.py` | 4 KiB slotted pages: 16-byte header, slot array growing up, cells growing down, compaction |
+| Pager | `trde/pager.py` | File I/O, LRU page cache, free-page list, rollback journal, crash recovery |
+| Values | `trde/values.py` | Type coercion, record serialization, **order-preserving** key encoding |
+| Heap | `trde/heap.py` | Row storage as a page chain; rows over 1 KB spill into overflow chains |
+| B+tree | `trde/btree.py` | Split, borrow, merge, root collapse, leaf-chained range scans, `check()` invariant validator |
+| Catalog | `trde/catalog.py` | The schema, stored as JSON in a page chain the file header points at |
+| Tables | `trde/table.py` | Heap + indexes together; NOT NULL / UNIQUE / PRIMARY KEY enforcement |
 | SQL front end | `tokenizer.py`, `sqlast.py`, `parser.py` | Tokenizer and recursive-descent parser with real operator precedence |
-| Expressions | `quarry/expr.py` | Three-valued logic, 19 scalar functions, 7 aggregates |
-| Executor | `quarry/executor.py` | Access-path selection, nested-loop joins, grouping, sorting, DDL/DML |
+| Expressions | `trde/expr.py` | Three-valued logic, 19 scalar functions, 7 aggregates |
+| Executor | `trde/executor.py` | Access-path selection, nested-loop joins, grouping, sorting, DDL/DML |
 | API + shell | `database.py`, `cli.py` | `connect()`, transactions, and the REPL |
 
 Three design decisions worth calling out:
@@ -140,7 +142,7 @@ python3 -m unittest discover -s tests -t .
 * **`test_sql.py`** — parser, DDL, DML, constraints, joins, aggregates,
   transactions, persistence across reopen, and a 10,000-row scale test.
 * **`test_vs_sqlite.py`** — **differential testing**: identical schema, rows and
-  36 query templates are run against Quarry and against the standard library's
+  36 query templates are run against TRDE and against the standard library's
   `sqlite3`, and the result sets must match — before and after mutations, with
   bound parameters, and with every index dropped.
 * **`test_crash.py`** — forks a child, kills it with `os._exit` partway through
@@ -154,7 +156,7 @@ python3 -m unittest discover -s tests -t .
 engine) is shown for scale, and it wins everything — the point is the order of
 magnitude, not the contest.
 
-| Operation | Quarry | sqlite3 |
+| Operation | TRDE | sqlite3 |
 | --- | --- | --- |
 | insert 20,000 rows (one transaction) | 2.52 s | 15.9 ms |
 | 200 primary-key lookups | 22.3 ms | 1.3 ms |
@@ -182,7 +184,7 @@ finish.
 ## Layout
 
 ```
-quarry/       the engine (17 modules, ~4,800 lines)
+trde/       the engine (17 modules, ~4,800 lines)
 tests/        156 tests
 bench.py      benchmark against sqlite3
 docs/DESIGN.md  file format and algorithms in detail

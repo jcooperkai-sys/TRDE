@@ -6,11 +6,11 @@ import shutil
 import tempfile
 import unittest
 
-from quarry import connect
-from quarry.errors import (IntegrityError, ParseError, QuarryError, SchemaError,
+from trde import connect
+from trde.errors import (IntegrityError, ParseError, TRDEError, SchemaError,
                            TransactionError, TypeMismatchError)
-from quarry.parser import parse, parse_one
-from quarry import sqlast as ast
+from trde.parser import parse, parse_one
+from trde import sqlast as ast
 
 
 class SQLCase(unittest.TestCase):
@@ -215,7 +215,7 @@ class InsertTest(SQLCase):
 
     def test_wrong_arity(self):
         self.db.execute("CREATE TABLE a (x INTEGER, y INTEGER)")
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("INSERT INTO a VALUES (1)")
         with self.assertRaises(SchemaError):
             self.db.execute("INSERT INTO a (nope) VALUES (1)")
@@ -357,9 +357,9 @@ class SelectTest(SQLCase):
         self.assertEqual(self.scalar("SELECT MAX(3, 1, 2)"), 3)
 
     def test_function_errors(self):
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("SELECT NOSUCHFUNC(1)")
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("SELECT ABS(1, 2)")
 
     def test_case_expression(self):
@@ -388,7 +388,7 @@ class SelectTest(SQLCase):
 
     def test_unknown_column(self):
         self.sample()
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("SELECT nope FROM emp")
 
     def test_ambiguous_column(self):
@@ -396,7 +396,7 @@ class SelectTest(SQLCase):
         self.db.execute("CREATE TABLE b (x INTEGER)")
         self.db.execute("INSERT INTO a VALUES (1)")
         self.db.execute("INSERT INTO b VALUES (1)")
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("SELECT x FROM a JOIN b ON a.x = b.x")
         self.assertEqual(self.rows("SELECT a.x FROM a JOIN b ON a.x = b.x"), [(1,)])
 
@@ -537,7 +537,7 @@ class EdgeCaseTest(SQLCase):
     def test_oversized_index_key_is_rejected_cleanly(self):
         self.db.execute("CREATE TABLE big (s TEXT)")
         self.db.execute("CREATE INDEX ixb ON big (s)")
-        with self.assertRaises(QuarryError):
+        with self.assertRaises(TRDEError):
             self.db.execute("INSERT INTO big VALUES (?)", ("x" * 2000,))
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM big"), 0)
         self.db.execute("INSERT INTO big VALUES ('short')")
@@ -563,8 +563,8 @@ class EdgeCaseTest(SQLCase):
 
 class TransactionTest(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-txn-")
-        self.path = os.path.join(self.dir, "t.qdb")
+        self.dir = tempfile.mkdtemp(prefix="trde-txn-")
+        self.path = os.path.join(self.dir, "t.trde")
         self.db = connect(self.path)
 
     def tearDown(self):
@@ -655,8 +655,8 @@ class TransactionTest(unittest.TestCase):
 
 class PersistenceTest(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-persist-")
-        self.path = os.path.join(self.dir, "p.qdb")
+        self.dir = tempfile.mkdtemp(prefix="trde-persist-")
+        self.path = os.path.join(self.dir, "p.trde")
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)

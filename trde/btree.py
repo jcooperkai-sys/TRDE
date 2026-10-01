@@ -1,11 +1,11 @@
 """A B+tree over byte-string keys.
 
 Keys are unique, opaque byte strings compared lexicographically (see
-``quarry.values.encode_index_key`` for how SQL tuples become keys).  Values are
+``trde.values.encode_index_key`` for how SQL tuples become keys).  Values are
 arbitrary byte strings that live only in leaves; leaves are chained left to
 right so range scans never revisit an internal node.
 
-Node layouts, on top of :class:`quarry.page.SlottedPage`:
+Node layouts, on top of :class:`trde.page.SlottedPage`:
 
 leaf (``PAGE_BTREE_LEAF``)
     cell = u16 key length, key, value.  ``link`` is the next leaf.

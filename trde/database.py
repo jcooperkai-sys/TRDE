@@ -3,7 +3,7 @@
 import contextlib
 
 from .catalog import Catalog
-from .errors import QuarryError, TransactionError
+from .errors import TRDEError, TransactionError
 from .executor import Executor, Result
 from .pager import Pager
 from .parser import parse
@@ -11,7 +11,7 @@ from .table import Table
 
 
 class Database(object):
-    """A Quarry database.
+    """A TRDE database.
 
     ``execute`` runs one or more statements and returns the last result.
     Statements outside an explicit ``BEGIN`` run in their own transaction and
@@ -22,8 +22,8 @@ class Database(object):
         self.path = path
         if path == ":memory:":
             import tempfile
-            self._tempdir = tempfile.mkdtemp(prefix="quarry-mem-")
-            path = "%s/memory.qdb" % self._tempdir
+            self._tempdir = tempfile.mkdtemp(prefix="trde-mem-")
+            path = "%s/memory.trde" % self._tempdir
         else:
             self._tempdir = None
         kwargs = {} if cache_pages is None else {"cache_pages": cache_pages}
@@ -133,7 +133,7 @@ class Database(object):
     # -- statement execution ----------------------------------------------
     def execute(self, sql, params=()):
         if self._closed:
-            raise QuarryError("database is closed")
+            raise TRDEError("database is closed")
         statements = parse(sql)
         if not statements:
             return Result(message="no statement")
@@ -145,7 +145,7 @@ class Database(object):
     def executemany(self, sql, sequence_of_params):
         statements = parse(sql)
         if len(statements) != 1:
-            raise QuarryError("executemany() needs exactly one statement")
+            raise TRDEError("executemany() needs exactly one statement")
         count = 0
         with self.transaction() if not self.in_transaction else _null_context():
             for params in sequence_of_params:

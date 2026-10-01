@@ -7,18 +7,18 @@ import struct
 import tempfile
 import unittest
 
-from quarry.btree import BTree
-from quarry.errors import StorageError
-from quarry.heap import HeapFile, make_rowid, split_rowid
-from quarry.page import PAGE_SIZE, SlottedPage, init_page, PAGE_HEAP
-from quarry.pager import Pager
-from quarry import values
+from trde.btree import BTree
+from trde.errors import StorageError
+from trde.heap import HeapFile, make_rowid, split_rowid
+from trde.page import PAGE_SIZE, SlottedPage, init_page, PAGE_HEAP
+from trde.pager import Pager
+from trde import values
 
 
 class TempDBCase(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-test-")
-        self.path = os.path.join(self.dir, "test.qdb")
+        self.dir = tempfile.mkdtemp(prefix="trde-test-")
+        self.path = os.path.join(self.dir, "test.trde")
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)
@@ -434,7 +434,7 @@ class ValueEncodingTest(unittest.TestCase):
         self.assertIsNone(values.coerce(None, values.INTEGER))
 
     def test_coercion_failures(self):
-        from quarry.errors import TypeMismatchError
+        from trde.errors import TypeMismatchError
         with self.assertRaises(TypeMismatchError):
             values.coerce("abc", values.INTEGER)
         with self.assertRaises(TypeMismatchError):
@@ -451,3 +451,24 @@ class ValueEncodingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LegacyMagicTest(unittest.TestCase):
+    """Files written before the rename (header magic QUARRYDB) still open."""
+
+    def test_quarry_era_file_opens(self):
+        from trde import connect
+        from trde.pager import LEGACY_MAGIC, MAGIC
+        d = tempfile.mkdtemp(prefix="trde-legacy-")
+        path = os.path.join(d, "old.trde")
+        db = connect(path)
+        db.execute("CREATE TABLE t (a INTEGER)")
+        db.execute("INSERT INTO t VALUES (7)")
+        db.close()
+        with open(path, "r+b") as f:
+            assert f.read(len(MAGIC)) == MAGIC
+            f.seek(0)
+            f.write(LEGACY_MAGIC)
+        db = connect(path)
+        self.assertEqual(db.execute("SELECT a FROM t").rows, [(7,)])
+        db.close()

@@ -1,4 +1,4 @@
-"""Benchmark Quarry, with sqlite3 alongside for scale.
+"""Benchmark TRDE, with sqlite3 alongside for scale.
 
     python3 bench.py [row_count]
 
@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 
-from quarry import connect
+from trde import connect
 
 SCHEMA = """CREATE TABLE t (
     id INTEGER PRIMARY KEY,
@@ -97,10 +97,10 @@ def run(engine, rows, path, execute, commit, close, many=None):
     return results
 
 
-def bench_quarry(rows, directory):
-    path = os.path.join(directory, "bench.qdb")
+def bench_trde(rows, directory):
+    path = os.path.join(directory, "bench.trde")
     db = connect(path)
-    return run("quarry", rows, path, db.execute, lambda: None, db.close)
+    return run("trde", rows, path, db.execute, lambda: None, db.close)
 
 
 def bench_sqlite(rows, directory):
@@ -116,25 +116,25 @@ def bench_sqlite(rows, directory):
 
 def main():
     rows = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
-    directory = tempfile.mkdtemp(prefix="quarry-bench-")
+    directory = tempfile.mkdtemp(prefix="trde-bench-")
     try:
-        quarry_results = bench_quarry(rows, directory)
+        trde_results = bench_trde(rows, directory)
         sqlite_results = bench_sqlite(rows, directory)
     finally:
         shutil.rmtree(directory, ignore_errors=True)
 
-    print("Quarry benchmark -- %d rows, page size 4096" % rows)
-    print("%-32s %10s %10s   %s" % ("operation", "quarry", "sqlite3", "ratio"))
+    print("TRDE benchmark -- %d rows, page size 4096" % rows)
+    print("%-32s %10s %10s   %s" % ("operation", "trde", "sqlite3", "ratio"))
     print("-" * 68)
-    for key in quarry_results:
+    for key in trde_results:
         if key.startswith("_"):
             continue
-        mine, theirs = quarry_results[key], sqlite_results[key]
+        mine, theirs = trde_results[key], sqlite_results[key]
         ratio = ("%.0fx" % (mine / theirs)) if theirs > 0 else "-"
         print("%-32s %10s %10s   %s" % (key, human(mine), human(theirs), ratio))
     print("-" * 68)
     print("%-32s %9.1f K %9.1f K" % ("file size",
-                                     quarry_results["_bytes"] / 1024.0,
+                                     trde_results["_bytes"] / 1024.0,
                                      sqlite_results["_bytes"] / 1024.0))
 
 

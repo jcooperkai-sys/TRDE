@@ -13,9 +13,9 @@ import struct
 import tempfile
 import unittest
 
-from quarry import connect
-from quarry.btree import BTree
-from quarry.pager import Pager
+from trde import connect
+from trde.btree import BTree
+from trde.pager import Pager
 
 
 def _child_crashes_mid_commit(path, halt_after):
@@ -46,8 +46,8 @@ def _child_crashes_mid_commit(path, halt_after):
 
 class CrashRecoveryTest(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-crash-")
-        self.path = os.path.join(self.dir, "crash.qdb")
+        self.dir = tempfile.mkdtemp(prefix="trde-crash-")
+        self.path = os.path.join(self.dir, "crash.trde")
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)

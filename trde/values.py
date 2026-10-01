@@ -1,6 +1,6 @@
 """Value model, record serialization and order-preserving key encoding.
 
-Quarry values are Python ``None``, ``int``, ``float``, ``str`` or ``bytes``,
+TRDE values are Python ``None``, ``int``, ``float``, ``str`` or ``bytes``,
 mapping to SQL NULL, INTEGER, REAL, TEXT and BLOB.
 
 Two independent encodings live here:

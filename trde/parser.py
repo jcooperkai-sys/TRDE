@@ -1,4 +1,4 @@
-"""Recursive-descent SQL parser producing :mod:`quarry.sqlast` nodes.
+"""Recursive-descent SQL parser producing :mod:`trde.sqlast` nodes.
 
 Expression precedence, loosest to tightest::
 

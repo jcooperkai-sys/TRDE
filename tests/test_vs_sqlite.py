@@ -1,17 +1,17 @@
 """Differential testing against sqlite3.
 
-The same schema, the same rows and the same queries go to Quarry and to the
+The same schema, the same rows and the same queries go to TRDE and to the
 sqlite3 module in the standard library; the result sets must match.  Query
 templates deliberately avoid constructs where the two engines are entitled to
 disagree (bare columns in a GROUP BY, unordered output, type-affinity corner
-cases), so any difference here is a real bug in Quarry.
+cases), so any difference here is a real bug in TRDE.
 """
 
 import random
 import sqlite3
 import unittest
 
-from quarry import connect
+from trde import connect
 
 SCHEMA = [
     """CREATE TABLE users (
@@ -108,10 +108,10 @@ def normalize_rows(rows):
 class DifferentialTest(unittest.TestCase):
     def build(self, seed, rows=120, orders=260):
         rng = random.Random(seed)
-        quarry_db = connect(":memory:")
+        trde_db = connect(":memory:")
         lite = sqlite3.connect(":memory:")
         for statement in SCHEMA:
-            quarry_db.execute(statement)
+            trde_db.execute(statement)
             lite.execute(statement)
 
         user_rows = []
@@ -133,48 +133,48 @@ class DifferentialTest(unittest.TestCase):
                 round(rng.uniform(1, 50), 4),
             ))
 
-        quarry_db.execute("BEGIN")
+        trde_db.execute("BEGIN")
         for row in user_rows:
-            quarry_db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)", row)
+            trde_db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)", row)
         for row in order_rows:
-            quarry_db.execute("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", row)
-        quarry_db.execute("COMMIT")
+            trde_db.execute("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", row)
+        trde_db.execute("COMMIT")
         lite.executemany("INSERT INTO users VALUES (?, ?, ?, ?, ?)", user_rows)
         lite.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", order_rows)
         lite.commit()
-        return quarry_db, lite
+        return trde_db, lite
 
-    def compare_all(self, quarry_db, lite, label=""):
+    def compare_all(self, trde_db, lite, label=""):
         for sql in QUERIES:
             expected = normalize_rows(lite.execute(sql).fetchall())
-            actual = normalize_rows(quarry_db.execute(sql).rows)
+            actual = normalize_rows(trde_db.execute(sql).rows)
             self.assertEqual(actual, expected,
-                             "%s mismatch for: %s\n  quarry:  %r\n  sqlite3: %r"
+                             "%s mismatch for: %s\n  trde:  %r\n  sqlite3: %r"
                              % (label, sql, actual[:5], expected[:5]))
 
     def test_matches_sqlite_on_fresh_data(self):
         for seed in (1, 2, 3):
-            quarry_db, lite = self.build(seed)
+            trde_db, lite = self.build(seed)
             try:
-                self.compare_all(quarry_db, lite, "seed %d" % seed)
+                self.compare_all(trde_db, lite, "seed %d" % seed)
             finally:
-                quarry_db.close()
+                trde_db.close()
                 lite.close()
 
     def test_matches_sqlite_after_mutations(self):
-        quarry_db, lite = self.build(17)
+        trde_db, lite = self.build(17)
         try:
             for statement in MUTATIONS:
-                quarry_db.execute(statement)
+                trde_db.execute(statement)
                 lite.execute(statement)
                 lite.commit()
-                self.compare_all(quarry_db, lite, "after %r" % statement)
+                self.compare_all(trde_db, lite, "after %r" % statement)
         finally:
-            quarry_db.close()
+            trde_db.close()
             lite.close()
 
     def test_matches_sqlite_with_parameters(self):
-        quarry_db, lite = self.build(5)
+        trde_db, lite = self.build(5)
         try:
             cases = [
                 ("SELECT id FROM users WHERE age > ? ORDER BY id", (40,)),
@@ -184,15 +184,15 @@ class DifferentialTest(unittest.TestCase):
             ]
             for sql, params in cases:
                 expected = normalize_rows(lite.execute(sql, params).fetchall())
-                actual = normalize_rows(quarry_db.execute(sql, params).rows)
+                actual = normalize_rows(trde_db.execute(sql, params).rows)
                 self.assertEqual(actual, expected, "mismatch for %s %r" % (sql, params))
         finally:
-            quarry_db.close()
+            trde_db.close()
             lite.close()
 
     def test_index_and_scan_agree(self):
         """The same predicate must return the same rows with and without an index."""
-        quarry_db, lite = self.build(9)
+        trde_db, lite = self.build(9)
         try:
             probes = [
                 "SELECT id FROM users WHERE city = 'berlin' ORDER BY id",
@@ -200,17 +200,17 @@ class DifferentialTest(unittest.TestCase):
                 "SELECT id FROM orders WHERE item = 'gear' AND qty = 5 ORDER BY id",
                 "SELECT id FROM users WHERE id BETWEEN 20 AND 60 ORDER BY id",
             ]
-            indexed = [quarry_db.execute(sql).rows for sql in probes]
-            quarry_db.execute("DROP INDEX ix_users_city")
-            quarry_db.execute("DROP INDEX ix_orders_user")
-            quarry_db.execute("DROP INDEX ix_orders_item_qty")
+            indexed = [trde_db.execute(sql).rows for sql in probes]
+            trde_db.execute("DROP INDEX ix_users_city")
+            trde_db.execute("DROP INDEX ix_orders_user")
+            trde_db.execute("DROP INDEX ix_orders_item_qty")
             for sql, before in zip(probes, indexed):
-                after = quarry_db.execute(sql).rows
+                after = trde_db.execute(sql).rows
                 self.assertEqual(after, before, "index/scan disagreement for %s" % sql)
                 self.assertEqual(normalize_rows(after),
                                  normalize_rows(lite.execute(sql).fetchall()))
         finally:
-            quarry_db.close()
+            trde_db.close()
             lite.close()
 
 

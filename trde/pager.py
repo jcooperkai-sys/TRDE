@@ -23,7 +23,8 @@ from collections import OrderedDict
 from .errors import StorageError, TransactionError
 from .page import PAGE_SIZE, PAGE_FREE, PAGE_HEADER, SlottedPage, init_page
 
-MAGIC = b"QUARRYDB\x00\x00\x00\x00v001"
+MAGIC = b"TRDEDB\x00\x00\x00\x00\x00\x00v001"      # 16 bytes: the header layout depends on this length
+LEGACY_MAGIC = b"QUARRYDB\x00\x00\x00\x00v001"     # files written before the rename to TRDE still open
 JOURNAL_MAGIC = b"QRYJRNL1"
 JOURNAL_END = b"QRYJEND1"
 
@@ -71,8 +72,8 @@ class Pager(object):
     def _read_header(self):
         buf = self._load(0)
         magic, page_size, page_count, freelist, catalog, schema_version = _FILE_HDR.unpack_from(buf, 0)
-        if magic != MAGIC:
-            raise StorageError("not a Quarry database file")
+        if magic not in (MAGIC, LEGACY_MAGIC):
+            raise StorageError("not a TRDE database file")
         if page_size != PAGE_SIZE:
             raise StorageError("database uses page size %d, this build expects %d" % (page_size, PAGE_SIZE))
         self.page_count = max(self.page_count, page_count)

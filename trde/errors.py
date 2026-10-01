@@ -1,15 +1,15 @@
-"""Exception hierarchy for Quarry."""
+"""Exception hierarchy for TRDE."""
 
 
-class QuarryError(Exception):
-    """Base class for every error raised by Quarry."""
+class TRDEError(Exception):
+    """Base class for every error raised by TRDE."""
 
 
-class StorageError(QuarryError):
+class StorageError(TRDEError):
     """Raised when the on-disk representation is corrupt or unusable."""
 
 
-class ParseError(QuarryError):
+class ParseError(TRDEError):
     """Raised when SQL text cannot be tokenized or parsed."""
 
     def __init__(self, message, position=None):
@@ -19,17 +19,17 @@ class ParseError(QuarryError):
         self.position = position
 
 
-class SchemaError(QuarryError):
+class SchemaError(TRDEError):
     """Raised for DDL problems: unknown table, duplicate column, ..."""
 
 
-class IntegrityError(QuarryError):
+class IntegrityError(TRDEError):
     """Raised when a constraint (NOT NULL, UNIQUE, PRIMARY KEY) is violated."""
 
 
-class TypeMismatchError(QuarryError):
+class TypeMismatchError(TRDEError):
     """Raised when a value cannot be coerced into a column's declared type."""
 
 
-class TransactionError(QuarryError):
+class TransactionError(TRDEError):
     """Raised for illegal transaction control (COMMIT with no transaction...)."""

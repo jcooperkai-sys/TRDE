@@ -1,6 +1,6 @@
 """Slotted-page primitives shared by the heap store and the B+tree.
 
-Every page in a Quarry database file is exactly ``PAGE_SIZE`` bytes and starts
+Every page in a TRDE database file is exactly ``PAGE_SIZE`` bytes and starts
 with the same 16 byte header::
 
     offset  size  meaning

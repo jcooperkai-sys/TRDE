@@ -1,8 +1,8 @@
-"""An interactive shell for Quarry databases.
+"""An interactive shell for TRDE databases.
 
-    python3 -m quarry mydb.qdb                 # REPL
-    python3 -m quarry mydb.qdb "SELECT 1+1"    # run one statement and exit
-    cat script.sql | python3 -m quarry mydb.qdb
+    python3 -m trde mydb.trde                 # REPL
+    python3 -m trde mydb.trde "SELECT 1+1"    # run one statement and exit
+    cat script.sql | python3 -m trde mydb.trde
 """
 
 import os
@@ -10,10 +10,10 @@ import sys
 import time
 
 from .database import Database
-from .errors import QuarryError
+from .errors import TRDEError
 from .values import format_number
 
-BANNER = """Quarry %s -- a database engine built from scratch.
+BANNER = """TRDE %s -- a database engine built from scratch.
 Enter SQL terminated by ';'.  ".help" lists shell commands, ".quit" exits."""
 
 HELP = """Shell commands:
@@ -150,7 +150,7 @@ class Shell(object):
         start = time.time()
         try:
             result = self.db.execute(sql)
-        except QuarryError as exc:
+        except TRDEError as exc:
             self.write("Error: %s" % exc)
             return
         except Exception as exc:  # pragma: no cover - defensive
@@ -275,7 +275,7 @@ def main(argv=None):
         return 0
     if argv and argv[0] in ("-v", "--version"):
         from . import __version__
-        print("quarry %s" % __version__)
+        print("trde %s" % __version__)
         return 0
     path = argv[0] if argv else ":memory:"
     sql = " ".join(argv[1:]) if len(argv) > 1 else None
@@ -295,7 +295,7 @@ def main(argv=None):
         print(BANNER % __version__)
         while True:
             try:
-                prompt = "quarry> " if not shell.buffer else "   ...> "
+                prompt = "trde> " if not shell.buffer else "   ...> "
                 line = input(prompt)
             except EOFError:
                 print()

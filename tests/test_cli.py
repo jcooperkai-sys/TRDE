@@ -11,8 +11,8 @@ try:
 except ImportError:  # pragma: no cover
     from StringIO import StringIO
 
-from quarry import connect
-from quarry.cli import Shell, format_csv, format_list, format_table, main, quote_sql
+from trde import connect
+from trde.cli import Shell, format_csv, format_list, format_table, main, quote_sql
 
 
 class FormatterTest(unittest.TestCase):
@@ -49,8 +49,8 @@ class FormatterTest(unittest.TestCase):
 
 class ShellTest(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-cli-")
-        self.db = connect(os.path.join(self.dir, "s.qdb"))
+        self.dir = tempfile.mkdtemp(prefix="trde-cli-")
+        self.db = connect(os.path.join(self.dir, "s.trde"))
         self.out = StringIO()
         self.shell = Shell(self.db, self.out)
 
@@ -146,8 +146,8 @@ class ShellTest(unittest.TestCase):
 
 class MainTest(unittest.TestCase):
     def setUp(self):
-        self.dir = tempfile.mkdtemp(prefix="quarry-main-")
-        self.path = os.path.join(self.dir, "m.qdb")
+        self.dir = tempfile.mkdtemp(prefix="trde-main-")
+        self.path = os.path.join(self.dir, "m.trde")
         self._stdout = sys.stdout
         sys.stdout = StringIO()  # main() prints; keep the test run quiet
 

@@ -1,4 +1,4 @@
-# Quarry design notes
+# TRDE design notes
 
 The file format and the algorithms, in enough detail to reimplement or debug
 them. Everything here is 4 KiB pages in a single file; there is no second file
@@ -15,7 +15,7 @@ Header (little endian, at offset 0 of page 0):
 
 | offset | size | field |
 | --- | --- | --- |
-| 0 | 16 | magic `QUARRYDB\0\0\0\0v001` |
+| 0 | 16 | magic `TRDEDB\0\0\0\0v001` |
 | 16 | 4 | page size (4096) |
 | 20 | 4 | page count |
 | 24 | 4 | freelist head page (0 = none) |

@@ -4,7 +4,7 @@ NULL follows SQL's three-valued logic: it propagates through arithmetic and
 comparisons, ``NULL AND FALSE`` is FALSE, ``NULL OR TRUE`` is TRUE, and
 everything else involving NULL is unknown (Python ``None``).
 
-Values compare using the storage-class ordering from :mod:`quarry.values`
+Values compare using the storage-class ordering from :mod:`trde.values`
 (NULL < numbers < text < blobs), the same rule SQLite uses.
 """
 
@@ -12,7 +12,7 @@ import decimal
 import re
 
 from . import sqlast as ast
-from .errors import QuarryError
+from .errors import TRDEError
 from .values import compare, format_number, type_of
 
 _LIKE_CACHE = {}
@@ -39,10 +39,10 @@ class Frame(object):
             slot = self.index[key]
         except KeyError:
             if key[0] is None:
-                raise QuarryError("no such column: %s" % name)
-            raise QuarryError("no such column: %s.%s" % (table, name))
+                raise TRDEError("no such column: %s" % name)
+            raise TRDEError("no such column: %s.%s" % (table, name))
         if slot is None:
-            raise QuarryError("ambiguous column name: %s" % name)
+            raise TRDEError("ambiguous column name: %s" % name)
         return self.values[slot]
 
 
@@ -118,7 +118,7 @@ def evaluate(node, frame):
     kind = type(node)
     handler = _HANDLERS.get(kind)
     if handler is None:
-        raise QuarryError("cannot evaluate %r" % (node,))
+        raise TRDEError("cannot evaluate %r" % (node,))
     return handler(node, frame)
 
 
@@ -131,7 +131,7 @@ def _eval_param(node, frame):
     try:
         return frame.params[node.index]
     except (IndexError, TypeError):
-        raise QuarryError("missing binding for parameter %d" % (node.index + 1))
+        raise TRDEError("missing binding for parameter %d" % (node.index + 1))
 
 
 def _eval_column(node, frame):
@@ -146,7 +146,7 @@ def _eval_unary(node, frame):
     if node.op == "NOT":
         result = truth(value)
         return None if result is None else (not result)
-    raise QuarryError("unknown unary operator %r" % node.op)
+    raise TRDEError("unknown unary operator %r" % node.op)
 
 
 def _arith(op, left, right):
@@ -171,7 +171,7 @@ def _arith(op, left, right):
             return None
         remainder = abs(a) % abs(b)
         return -remainder if a < 0 else remainder
-    raise QuarryError("unknown arithmetic operator %r" % op)
+    raise TRDEError("unknown arithmetic operator %r" % op)
 
 
 _COMPARATORS = {
@@ -293,10 +293,10 @@ def _eval_func(node, frame):
     if key in frame.aggregates:
         return frame.aggregates[key]
     if node.name in AGGREGATE_NAMES and not (node.name in ("MIN", "MAX") and len(node.args) > 1):
-        raise QuarryError("misuse of aggregate function %s()" % node.name)
+        raise TRDEError("misuse of aggregate function %s()" % node.name)
     handler = SCALAR_FUNCTIONS.get(node.name)
     if handler is None:
-        raise QuarryError("no such function: %s" % node.name)
+        raise TRDEError("no such function: %s" % node.name)
     args = [evaluate(arg, frame) for arg in node.args]
     return handler(args)
 
@@ -330,7 +330,7 @@ def _fn_lower(args):
 
 def _fn_substr(args):
     if len(args) not in (2, 3):
-        raise QuarryError("SUBSTR() takes 2 or 3 arguments")
+        raise TRDEError("SUBSTR() takes 2 or 3 arguments")
     if args[0] is None or args[1] is None:
         return None
     text = _as_text(args[0])
@@ -355,7 +355,7 @@ def _fn_substr(args):
 
 def _fn_coalesce(args):
     if not args:
-        raise QuarryError("COALESCE() needs at least one argument")
+        raise TRDEError("COALESCE() needs at least one argument")
     for value in args:
         if value is not None:
             return value
@@ -374,7 +374,7 @@ def _fn_nullif(args):
 
 def _fn_round(args):
     if len(args) not in (1, 2):
-        raise QuarryError("ROUND() takes 1 or 2 arguments")
+        raise TRDEError("ROUND() takes 1 or 2 arguments")
     if args[0] is None:
         return None
     digits = 0 if len(args) == 1 else int(_numeric(args[1]) or 0)
@@ -391,7 +391,7 @@ def _fn_round(args):
 
 def _fn_trim(args, mode="both"):
     if len(args) not in (1, 2):
-        raise QuarryError("TRIM() takes 1 or 2 arguments")
+        raise TRDEError("TRIM() takes 1 or 2 arguments")
     if args[0] is None:
         return None
     text = _as_text(args[0])
@@ -433,7 +433,7 @@ def _fn_hex(args):
 
 def _fn_min(args):
     if len(args) < 2:
-        raise QuarryError("MIN() as a scalar function needs at least 2 arguments")
+        raise TRDEError("MIN() as a scalar function needs at least 2 arguments")
     if any(a is None for a in args):
         return None
     best = args[0]
@@ -445,7 +445,7 @@ def _fn_min(args):
 
 def _fn_max(args):
     if len(args) < 2:
-        raise QuarryError("MAX() as a scalar function needs at least 2 arguments")
+        raise TRDEError("MAX() as a scalar function needs at least 2 arguments")
     if any(a is None for a in args):
         return None
     best = args[0]
@@ -457,7 +457,7 @@ def _fn_max(args):
 
 def _arity(name, args, count):
     if len(args) != count:
-        raise QuarryError("%s() takes exactly %d argument%s" % (name, count, "" if count == 1 else "s"))
+        raise TRDEError("%s() takes exactly %d argument%s" % (name, count, "" if count == 1 else "s"))
 
 
 SCALAR_FUNCTIONS = {
@@ -522,7 +522,7 @@ class Aggregator(object):
             self.count += 1
             return
         if not self.node.args:
-            raise QuarryError("%s() requires an argument" % self.name)
+            raise TRDEError("%s() requires an argument" % self.name)
         value = evaluate(self.node.args[0], frame)
         if value is None:
             return
@@ -575,7 +575,7 @@ class Aggregator(object):
             for separator, text in self.texts[1:]:
                 out += separator + text
             return out
-        raise QuarryError("unknown aggregate %s()" % name)
+        raise TRDEError("unknown aggregate %s()" % name)
 
 
 def find_aggregates(node, found=None):
